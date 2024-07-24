@@ -9,6 +9,7 @@
 #import "QBAssetsViewController.h"
 #import <Photos/Photos.h>
 #import "QBConstants.h"
+#import "LimitedAccess.h"
 
 // Views
 #import "QBImagePickerController.h"
@@ -66,6 +67,7 @@ static CGSize CGSizeScale(CGSize size, CGFloat scale) {
 
 @property (nonatomic, assign) BOOL disableScrollToBottom;
 @property (nonatomic, strong) NSIndexPath *lastSelectedItemIndexPath;
+@property (nonatomic, strong) LimitedAccess *limitedAccess;
 
 @end
 
@@ -77,7 +79,7 @@ static CGSize CGSizeScale(CGSize size, CGFloat scale) {
     
     [self setUpToolbarItems];
     [self resetCachedAssets];
-    
+    _limitedAccess = [[LimitedAccess alloc] initWithParentViewController:self prompt:nil];
     // Register observer
     [[PHPhotoLibrary sharedPhotoLibrary] registerChangeObserver:self];
 
@@ -465,12 +467,18 @@ static CGSize CGSizeScale(CGSize size, CGFloat scale) {
 
 - (NSInteger)numberOfSectionsInCollectionView:(UICollectionView *)collectionView
 {
+    if(_limitedAccess.isLimitedAccess){
+            return 2;
+    }
     return 1;
 }
 
 - (NSInteger)collectionView:(UICollectionView *)collectionView numberOfItemsInSection:(NSInteger)section
 {
-    return self.fetchResult.count;
+    if(section==0)
+        return self.fetchResult.count;
+    else
+        return 0;
 }
 
 - (UICollectionViewCell *)collectionView:(UICollectionView *)collectionView cellForItemAtIndexPath:(NSIndexPath *)indexPath
@@ -529,70 +537,97 @@ static CGSize CGSizeScale(CGSize size, CGFloat scale) {
 - (UICollectionReusableView *)collectionView:(UICollectionView *)collectionView viewForSupplementaryElementOfKind:(NSString *)kind atIndexPath:(NSIndexPath *)indexPath
 {
     if (kind == UICollectionElementKindSectionFooter) {
-        UICollectionReusableView *footerView = [collectionView dequeueReusableSupplementaryViewOfKind:UICollectionElementKindSectionFooter
-                                                                                  withReuseIdentifier:@"FooterView"
-                                                                                         forIndexPath:indexPath];
-        
-        // Number of assets
-        UILabel *label = (UILabel *)[footerView viewWithTag:1];
-
-		BOOL useDarkMode = NO;
-		if (@available(iOS 13.0, *)) {
-			useDarkMode = ([UITraitCollection currentTraitCollection].userInterfaceStyle == UIUserInterfaceStyleDark);
-		}
-
-		// Use oposite text color
-		if (useDarkMode == YES) {
-			[label setTextColor:kLightBackground];
-		} else  {
-			[label setTextColor:kDarkBackground];
-		}
-        
-        NSBundle *bundle = self.imagePickerController.assetBundle;
-        NSUInteger numberOfPhotos = [self.fetchResult countOfAssetsWithMediaType:PHAssetMediaTypeImage];
-        NSUInteger numberOfVideos = [self.fetchResult countOfAssetsWithMediaType:PHAssetMediaTypeVideo];
-        
-        switch (self.imagePickerController.mediaType) {
-            case QBImagePickerMediaTypeAny:
-            {
-                NSString *format = NSLocalizedStringFromTableInBundle(@"assets.footer.photos-and-videos", @"QBImagePicker", bundle, nil);
-
-				if (numberOfPhotos == 1) {
-                    if (numberOfVideos == 1) {
-                        format = NSLocalizedStringFromTableInBundle(@"assets.footer.photo-and-video", @"QBImagePicker", bundle, nil);
-                    } else {
-                        format = NSLocalizedStringFromTableInBundle(@"assets.footer.photo-and-videos", @"QBImagePicker", bundle, nil);
+        if (indexPath.section == 0){
+            UICollectionReusableView *footerView = [collectionView dequeueReusableSupplementaryViewOfKind:UICollectionElementKindSectionFooter
+                                                                                      withReuseIdentifier:@"FooterView"
+                                                                                             forIndexPath:indexPath];
+            
+            // Number of assets
+            UILabel *label = (UILabel *)[footerView viewWithTag:1];
+            
+            BOOL useDarkMode = NO;
+            if (@available(iOS 13.0, *)) {
+                useDarkMode = ([UITraitCollection currentTraitCollection].userInterfaceStyle == UIUserInterfaceStyleDark);
+            }
+            
+            // Use oposite text color
+            if (useDarkMode == YES) {
+                [label setTextColor:kLightBackground];
+            } else  {
+                [label setTextColor:kDarkBackground];
+            }
+            
+            NSBundle *bundle = self.imagePickerController.assetBundle;
+            NSUInteger numberOfPhotos = [self.fetchResult countOfAssetsWithMediaType:PHAssetMediaTypeImage];
+            NSUInteger numberOfVideos = [self.fetchResult countOfAssetsWithMediaType:PHAssetMediaTypeVideo];
+            
+            switch (self.imagePickerController.mediaType) {
+                case QBImagePickerMediaTypeAny:
+                {
+                    NSString *format = NSLocalizedStringFromTableInBundle(@"assets.footer.photos-and-videos", @"QBImagePicker", bundle, nil);
+                    
+                    if (numberOfPhotos == 1) {
+                        if (numberOfVideos == 1) {
+                            format = NSLocalizedStringFromTableInBundle(@"assets.footer.photo-and-video", @"QBImagePicker", bundle, nil);
+                        } else {
+                            format = NSLocalizedStringFromTableInBundle(@"assets.footer.photo-and-videos", @"QBImagePicker", bundle, nil);
+                        }
+                    } else if (numberOfVideos == 1) {
+                        format = NSLocalizedStringFromTableInBundle(@"assets.footer.photos-and-video", @"QBImagePicker", bundle, nil);
                     }
-                } else if (numberOfVideos == 1) {
-                    format = NSLocalizedStringFromTableInBundle(@"assets.footer.photos-and-video", @"QBImagePicker", bundle, nil);
+                    
+                    if (format != nil) {
+                        label.text = [NSString stringWithFormat:format, numberOfPhotos, numberOfVideos];
+                    }
                 }
-
-				if (format != nil) {
-					label.text = [NSString stringWithFormat:format, numberOfPhotos, numberOfVideos];
-				}
+                    break;
+                    
+                case QBImagePickerMediaTypeImage:
+                {
+                    NSString *key = (numberOfPhotos == 1) ? @"assets.footer.photo" : @"assets.footer.photos";
+                    NSString *format = NSLocalizedStringFromTableInBundle(key, @"QBImagePicker", bundle, nil);
+                    
+                    label.text = [NSString stringWithFormat:format, numberOfPhotos];
+                }
+                    break;
+                    
+                case QBImagePickerMediaTypeVideo:
+                {
+                    NSString *key = (numberOfVideos == 1) ? @"assets.footer.video" : @"assets.footer.videos";
+                    NSString *format = NSLocalizedStringFromTableInBundle(key, @"QBImagePicker", bundle, nil);
+                    
+                    label.text = [NSString stringWithFormat:format, numberOfVideos];
+                }
+                    break;
             }
-                break;
-                
-            case QBImagePickerMediaTypeImage:
-            {
-                NSString *key = (numberOfPhotos == 1) ? @"assets.footer.photo" : @"assets.footer.photos";
-                NSString *format = NSLocalizedStringFromTableInBundle(key, @"QBImagePicker", bundle, nil);
-                
-                label.text = [NSString stringWithFormat:format, numberOfPhotos];
-            }
-                break;
-                
-            case QBImagePickerMediaTypeVideo:
-            {
-                NSString *key = (numberOfVideos == 1) ? @"assets.footer.video" : @"assets.footer.videos";
-                NSString *format = NSLocalizedStringFromTableInBundle(key, @"QBImagePicker", bundle, nil);
-                
-                label.text = [NSString stringWithFormat:format, numberOfVideos];
-            }
-                break;
+            
+            return footerView;
         }
-        
-        return footerView;
+    }
+    
+    if (kind == UICollectionElementKindSectionHeader) {
+        if (indexPath.section == 1){
+            
+            UICollectionReusableView *limitedView = [collectionView dequeueReusableSupplementaryViewOfKind:UICollectionElementKindSectionHeader
+                                                                                       withReuseIdentifier:@"LimitedView"
+                                                                                              forIndexPath:indexPath];
+            
+            
+            UILabel *label = (UILabel *)[limitedView viewWithTag:1];
+            
+            label.attributedText = _limitedAccess.limitedPrompt;
+            if (@available(iOS 13, *)) {
+                limitedView.backgroundColor = [UIColor systemGray6Color];
+            }
+            
+            UITapGestureRecognizer *tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:_limitedAccess action:@selector(showMenu)];
+            [limitedView addGestureRecognizer:tapGesture];
+            
+            // Enable user interaction for the header view
+            limitedView.userInteractionEnabled = YES;
+            
+            return limitedView;
+        }
     }
     
     return nil;
@@ -713,6 +748,23 @@ static CGSize CGSizeScale(CGSize size, CGFloat scale) {
     }
 
     return CGSizeMake(width, width);
+}
+
+- (CGSize)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewFlowLayout *)collectionViewLayout referenceSizeForHeaderInSection:(NSInteger)section {
+    if(section == 1){
+        return collectionViewLayout.headerReferenceSize; // Adjust the size as needed
+    } else {
+        return CGSizeMake(0, 0); // Adjust the size as needed
+    }
+}
+- (CGSize)collectionView:(UICollectionView *)collectionView
+                  layout:(UICollectionViewFlowLayout *)collectionViewLayout
+referenceSizeForFooterInSection:(NSInteger)section {
+    if(section == 0){
+        return collectionViewLayout.footerReferenceSize;
+    } else {
+        return CGSizeMake(0, 0); // Adjust the size as needed
+    }
 }
 
 @end
