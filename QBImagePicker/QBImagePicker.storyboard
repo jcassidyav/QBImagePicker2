@@ -255,10 +255,11 @@
                         </collectionReusableView>
                         <collectionReusableView key="sectionFooterView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" reuseIdentifier="FooterView" id="sqR-h3-lW1">
                             <rect key="frame" x="0.0" y="137.5" width="414" height="66"/>
-                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                            <autoresizingMask key="autoresizingMask"/>
                             <subviews>
-                                <label opaque="NO" userInteractionEnabled="NO" tag="1" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Number of Photos and Videos" textAlignment="center" lineBreakMode="wordWrap" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="m2s-7T-bnL">
-                                    <rect key="frame" x="0.0" y="22.5" width="414" height="21"/>
+                                <label opaque="NO" userInteractionEnabled="NO" tag="1" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Number of Photos and Videos" textAlignment="center" lineBreakMode="wordWrap" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" id="m2s-7T-bnL">
+                                    <rect key="frame" x="0.0" y="22" width="414" height="21"/>
+                                    <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <fontDescription key="fontDescription" type="system" pointSize="17"/>
                                     <color key="textColor" systemColor="darkTextColor"/>
                                     <nil key="highlightedColor"/>
@@ -269,6 +270,11 @@
                                 <constraint firstAttribute="centerY" secondItem="m2s-7T-bnL" secondAttribute="centerY" id="DrY-pC-Gfi"/>
                                 <constraint firstAttribute="right" secondItem="m2s-7T-bnL" secondAttribute="right" id="lng-sP-3aa"/>
                             </constraints>
+                            <variation key="default">
+                                <mask key="constraints">
+                                    <exclude reference="DrY-pC-Gfi"/>
+                                </mask>
+                            </variation>
                         </collectionReusableView>
                         <connections>
                             <outlet property="dataSource" destination="QiH-NZ-ZGN" id="PlE-FW-LqS"/>
