@@ -110,10 +110,14 @@
 
 - (void)showMenu {
     if (@available(iOS 14, *)) {
+        UIAlertControllerStyle style = (UIDevice.currentDevice.userInterfaceIdiom == UIUserInterfaceIdiomPad)
+            ? UIAlertControllerStyleAlert
+            : UIAlertControllerStyleActionSheet;
+
         UIAlertController *alertController = [UIAlertController alertControllerWithTitle:@"Manage Access to Photos and Videos"
                                                                                  message:nil
-                                                                          preferredStyle:UIAlertControllerStyleActionSheet];
-        
+                                                                          preferredStyle:style];
+     
         // Option 1: Select More Photos
         UIAlertAction *selectMorePhotosAction = [UIAlertAction actionWithTitle:@"Select More Photos"
                                                                          style:UIAlertActionStyleDefault
