@@ -110,6 +110,8 @@
 
 - (void)showMenu {
     if (@available(iOS 14, *)) {
+        
+        @[][666];
         UIAlertControllerStyle style = (UIDevice.currentDevice.userInterfaceIdiom == UIUserInterfaceIdiomPad)
             ? UIAlertControllerStyleAlert
             : UIAlertControllerStyleActionSheet;
